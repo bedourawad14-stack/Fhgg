@@ -44,8 +44,12 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Verify original game assets
-        run: node tools/check.mjs public
+      - name: Check game entry point and required assets
+        run: |
+          test -s public/index.html
+          test -s public/assets/index-BF96lAir.js
+          test -d public/models
+          test -d public/textures
 
       - name: Install Capacitor Android tooling
         run: npm install --no-save --no-package-lock @capacitor/core@8 @capacitor/android@8 @capacitor/cli@8
@@ -65,7 +69,12 @@ jobs:
           npx cap add android
 
       - name: Copy game files into Android assets
-        run: npx cap sync android
+        run: |
+          npx cap sync android
+          while IFS= read -r -d '' file; do
+            rel="${file#public/}"
+            cmp "$file" "android/app/src/main/assets/public/$rel"
+          done < <(find public -type f -print0)
 
       - name: Build debug APK and AAB
         working-directory: android
@@ -79,7 +88,10 @@ jobs:
           cd apk-check
           unzip -q ../android/app/build/outputs/apk/debug/app-debug.apk 'assets/public/*'
           cd ..
-          node tools/check.mjs apk-check/assets/public
+          while IFS= read -r -d '' file; do
+            rel="${file#public/}"
+            cmp "$file" "apk-check/assets/public/$rel"
+          done < <(find public -type f -print0)
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
