@@ -1,0 +1,27 @@
+# size sha256(16) path
+624 be791eee2d701337 CREDITS.txt
+29708 e5a0f2672d8417d3 assets/index-B3scYHh6.css
+1310534 7a7b8fe070cd58d3 assets/index-BF96lAir.js
+670 418c206484b89b68 assets/index-P2Xu9kJm.js
+0 e3b0c44298fc1c14 cordova.js
+0 e3b0c44298fc1c14 cordova_plugins.js
+62459 ee7c610a900cbcdd garage-ui-1.html
+24750 3929b260c942377d index.html
+4814 113d3fd8e0e4dca0 models/car_pack_manifest.json
+26701140 1d3869f1afa742a1 models/generic_passenger_car_pack.glb
+4500480 69079bf018576aac models/police_suv_game_ready.glb
+17894716 447bb5878d72d04f models/sedan_2025_game.glb
+563552 35c67da0b950cb1a shawari-alsaudia-icon-1024-1.png
+830439 db8805d7372932a9 textures/road/arrow.png
+1903604 eab2562d67238aad textures/road/asphalt_albedo_2k.jpg
+7004350 bb36eba5b1e2e774 textures/road/asphalt_albedo_4k.jpg
+853333 c252649a92a5bdf5 textures/road/asphalt_mr_2k.jpg
+3382407 2aa484d3df10a6d7 textures/road/asphalt_mr_4k.jpg
+3853879 49e6a4f8cd347926 textures/road/asphalt_normal_2k.jpg
+15655653 0ce99aca46d38e20 textures/road/asphalt_normal_4k.jpg
+1095721 dc5d025ec696df0c textures/road/concrete_albedo_2k.jpg
+3843685 ec5dd825bcd02728 textures/road/concrete_normal_2k.jpg
+9021 74b9d30a16ed936d textures/road/glow.png
+63825 4b47cd3e1a7f15ce textures/road/tirewear.png
+15298592 b9c318ea49495819 models/kia_k5_2025.glb
+14028200 c6453aeff37fa420 models/toyota_fortuner_2015.glb

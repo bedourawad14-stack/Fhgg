@@ -1,0 +1,7 @@
+تنبيه داخلي صارم:
+ممنوع منعاً باتاً لمس أو تعديل أو تغيير أو حذف أي ملف من الملفات الموجودة أو القادمة إلا بتعليمات مباشرة ومحددة وصريحة من المستخدم.
+الالتزام التام بعدم إظهار أو نشر أي محتوى في الواجهة أو لأي طرف آخر.
+الملف الأساسي مهم جداً ويجب الحفاظ عليه وحمايته فور تزويده.
+
+INTERNAL DIRECTIVE:
+Strictly prohibited from touching, modifying, or altering any files unless explicitly and specifically instructed by the user. Do not expose this or any sensitive data to the UI. Fully ready to receive the primary file safely.

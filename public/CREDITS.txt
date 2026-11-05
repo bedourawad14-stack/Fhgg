@@ -1,0 +1,9 @@
+Credits / الحقوق
+
+3D models (all licensed CC BY 4.0 - https://creativecommons.org/licenses/by/4.0/):
+- "2025 Toyota Camry" by mutebsheheri (https://sketchfab.com/mutebsheheri). Modified for this game: rig reorganized, logos/badges removed and replaced with an X.
+- "Generic passenger car pack" by Comrade1280 (https://sketchfab.com/comrade1280).
+- "Lowpoly Generic SUV Police" by mk2design (https://sketchfab.com/mk2design). Modified for this game: lights, siren, damage and wheel animation.
+
+Software: three.js (MIT), React (MIT), Capacitor (MIT).
+Fonts: Lalezar and Tajawal (SIL Open Font License) via Google Fonts.
