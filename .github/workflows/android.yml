@@ -52,7 +52,7 @@ jobs:
           test -d public/textures
 
       - name: Install Capacitor Android tooling
-        run: npm install --no-save --no-package-lock @capacitor/core@8 @capacitor/android@8 @capacitor/cli@8
+        run: npm install --legacy-peer-deps --no-save --no-package-lock @capacitor/core@8 @capacitor/android@8 @capacitor/cli@8
 
       - name: Configure Android app
         run: |
