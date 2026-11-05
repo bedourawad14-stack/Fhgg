@@ -1,8 +1,0 @@
-{
-  "appId": "com.shawari.alsaudia",
-  "appName": "شوارع السعودية",
-  "webDir": "public",
-  "android": {
-    "allowMixedContent": false
-  }
-}
