@@ -94,9 +94,20 @@ body.sg-armed .sg-gun{box-shadow:0 0 14px rgba(255,90,60,.8),0 0 0 2px #ff6a4a}
     <script>
       (function () {
         function fs(){
-          try{var e=document.documentElement;(e.requestFullscreen?e.requestFullscreen({navigationUI:"hide"}):(e.webkitRequestFullscreen&&e.webkitRequestFullscreen()))}catch(x){}
+          try{
+            var e=document.documentElement;
+            var request=e.requestFullscreen||e.webkitRequestFullscreen;
+            if(!request)return Promise.resolve(false);
+            var result=request.call(e,{navigationUI:"hide"});
+            return result&&typeof result.catch==="function"
+              ? result.catch(function(){return false;})
+              : Promise.resolve(true);
+          }catch(x){return Promise.resolve(false);}
         }
-        function once(){document.removeEventListener("pointerdown",once);try{var r=fs();if(r&&r.catch)r.catch(function(){})}catch(x){}}
+        function once(){
+          document.removeEventListener("pointerdown",once);
+          fs();
+        }
         document.addEventListener("pointerdown",once);
       })();
     </script>
