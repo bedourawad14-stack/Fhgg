@@ -1,15 +1,11 @@
-name: Android APK and AAB
+name: Build Android from Google Drive archive
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - "public/**"
-      - "tools/**"
-      - "package.json"
-      - "capacitor.config.json"
       - ".github/workflows/android.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,12 +17,40 @@ concurrency:
 jobs:
   android:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
-      - name: Checkout repository and Git LFS files
+      - name: Checkout build workflow
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          lfs: true
+          python-version: "3.12"
+
+      - name: Download new project archive from Google Drive
+        run: |
+          python -m pip install --upgrade gdown
+          mkdir -p incoming project
+          gdown --id "13A-gOYikLEWlBraBgG_1DO_k8HASkXhO" -O incoming/project.zip
+          test -s incoming/project.zip
+          unzip -q incoming/project.zip -d project
+
+      - name: Locate project root and install Android tooling
+        run: |
+          ROOT="$(find project -type f -path '*/public/index.html' -print -quit | sed 's#/public/index.html$##')"
+          if [ -z "$ROOT" ]; then
+            ROOT="$(find project -type f -name capacitor.config.json -print -quit | xargs -r dirname)"
+          fi
+          if [ -z "$ROOT" ] || [ ! -d "$ROOT" ]; then
+            echo "Could not identify project root in the Drive archive."
+            find project -maxdepth 3 -type f | head -200
+            exit 1
+          fi
+          echo "PROJECT_ROOT=$ROOT" >> "$GITHUB_ENV"
+          rsync -a --delete --exclude='.github/' "$ROOT/" ./workspace/
+          test -s workspace/package.json
+          test -s workspace/public/index.html
+          test -d workspace/public
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -44,67 +68,46 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Check game entry point and required assets
+      - name: Install dependencies and Capacitor Android
+        working-directory: workspace
         run: |
-          test -s public/index.html
-          test -s public/assets/index-BF96lAir.js
-          test -d public/models
-          test -d public/textures
+          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --no-save @capacitor/core@8 @capacitor/android@8 @capacitor/cli@8
 
-      - name: Install Capacitor Android tooling
-        run: npm install --legacy-peer-deps --no-save --no-package-lock @capacitor/core@8 @capacitor/android@8 @capacitor/cli@8
-
-      - name: Configure Android app
+      - name: Configure and sync Android project
+        working-directory: workspace
         run: |
-          cat > capacitor.config.json <<'EOF'
+          if [ ! -f capacitor.config.json ] && [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.js ]; then
+            cat > capacitor.config.json <<'EOF'
           {
             "appId": "com.shawari.alsaudia",
             "appName": "شوارع السعودية",
             "webDir": "public",
-            "android": {
-              "allowMixedContent": false
-            }
+            "android": { "allowMixedContent": false }
           }
           EOF
+          fi
           npx cap add android
-
-      - name: Copy game files into Android assets
-        run: |
           npx cap sync android
-          while IFS= read -r -d '' file; do
-            rel="${file#public/}"
-            cmp "$file" "android/app/src/main/assets/public/$rel"
-          done < <(find public -type f -print0)
 
       - name: Build debug APK and AAB
-        working-directory: android
+        working-directory: workspace/android
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug bundleDebug
 
-      - name: Verify game assets inside APK
-        run: |
-          mkdir -p apk-check
-          cd apk-check
-          unzip -q ../android/app/build/outputs/apk/debug/app-debug.apk 'assets/public/*'
-          cd ..
-          while IFS= read -r -d '' file; do
-            rel="${file#public/}"
-            cmp "$file" "apk-check/assets/public/$rel"
-          done < <(find public -type f -print0)
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: shawari-alsaudia-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: shawari-alsaudia-new-debug-apk
+          path: workspace/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: shawari-alsaudia-debug-aab
-          path: android/app/build/outputs/bundle/debug/app-debug.aab
+          name: shawari-alsaudia-new-debug-aab
+          path: workspace/android/app/build/outputs/bundle/debug/app-debug.aab
           if-no-files-found: error
           retention-days: 14
