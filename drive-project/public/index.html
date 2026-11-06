@@ -91,26 +91,7 @@ body.sg-armed .sg-gun{box-shadow:0 0 14px rgba(255,90,60,.8),0 0 0 2px #ff6a4a}
 [data-ic=camera],[data-ic=window],[data-ic=eye]{display:none!important}.sg-cx[data-k=cam],.sg-cx[data-k=shoot],.sg-cx[data-k=screen],.sg-cx[data-k=fire]{display:none!important}body.sg-foot .sg-ctl,body.sg-foot .sg-cx{display:none!important;pointer-events:none!important}.sg-act{position:fixed;z-index:60;display:none;align-items:center;justify-content:center;min-width:120px;height:44px;padding:0 18px;border:0;border-radius:14px;color:#ffe9a8;font-weight:800;font-size:14px;touch-action:none;background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,0) 42%),linear-gradient(180deg,#262c36,#0c0f14);box-shadow:0 6px 14px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.22),0 0 0 1px rgba(255,200,90,.7)}.sg-exit{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 92px)}.sg-enter{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 40px)}.sg-joy{position:fixed;z-index:50;width:90px;height:90px;border-radius:50%;border:2px solid rgba(255,200,90,.6);background:rgba(0,0,0,.25);pointer-events:none;display:none}.sg-joy i{position:absolute;left:25px;top:25px;width:40px;height:40px;border-radius:50%;background:radial-gradient(#ffe07a,#c98b00);box-shadow:0 0 12px rgba(255,200,90,.7)}
 .sg-cx.sg-armed{box-shadow:0 5px 12px rgba(0,0,0,.55),0 0 0 2px #ff9d00!important}.sg-cx.sg-blink{filter:brightness(1.7);box-shadow:0 0 22px #ff9d00,0 0 0 2px #ffcf66!important}
 </style>
-    <script>
-      (function () {
-        function fs(){
-          try{
-            var e=document.documentElement;
-            var request=e.requestFullscreen||e.webkitRequestFullscreen;
-            if(!request)return Promise.resolve(false);
-            var result=request.call(e,{navigationUI:"hide"});
-            return result&&typeof result.catch==="function"
-              ? result.catch(function(){return false;})
-              : Promise.resolve(true);
-          }catch(x){return Promise.resolve(false);}
-        }
-        function once(){
-          document.removeEventListener("pointerdown",once);
-          fs();
-        }
-        document.addEventListener("pointerdown",once);
-      })();
-    </script>
+    <!-- Fullscreen is intentionally disabled in Android WebView. Keep the game's error reporting intact. -->
     <script>
 (function () {
   var SG_GUARD="SG-GUARD-BEGIN";
