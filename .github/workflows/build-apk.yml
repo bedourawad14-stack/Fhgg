@@ -78,7 +78,6 @@ jobs:
           exit 1
 
       - name: Set up Java
-        if: steps.detect.outputs.type != 'web'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
