@@ -47,6 +47,7 @@ jobs:
             exit 1
           fi
           echo "PROJECT_ROOT=$ROOT" >> "$GITHUB_ENV"
+          mkdir -p workspace
           rsync -a --delete --exclude='.github/' "$ROOT/" ./workspace/
           test -s workspace/package.json
           test -s workspace/public/index.html
@@ -87,7 +88,7 @@ jobs:
           }
           EOF
           fi
-          npx cap add android
+          if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
 
       - name: Build debug APK and AAB
