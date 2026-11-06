@@ -21,7 +21,7 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check gdown
           mkdir -p "$RUNNER_TEMP/project"
-          gdown --fuzzy "https://drive.google.com/file/d/1AcmaJCuoFyYeggztggUNyIsS1ya9UcVa/view?usp=drivesdk" -O "$RUNNER_TEMP/project.zip"
+          gdown "1AcmaJCuoFyYeggztggUNyIsS1ya9UcVa" -O "$RUNNER_TEMP/project.zip"
           if ! unzip -tq "$RUNNER_TEMP/project.zip"; then
             echo "The Google Drive file could not be downloaded as a valid ZIP."
             echo "Make sure its sharing setting is 'Anyone with the link - Viewer'."
