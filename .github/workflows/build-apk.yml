@@ -1,4 +1,4 @@
-name: Build APK from uploaded ZIP
+name: Download Drive project and build APK
 
 on:
   push:
@@ -12,22 +12,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout workflow
         uses: actions/checkout@v4
 
-      - name: Find and extract uploaded ZIP
-        id: source
+      - name: Download project ZIP from Google Drive
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t archives < <(find . -maxdepth 2 -type f -iname '*.zip' -not -path './.git/*')
-          if [ "${#archives[@]}" -ne 1 ]; then
-            echo "Expected exactly one project ZIP in the repository root (or one folder below); found ${#archives[@]}."
+          python -m pip install --disable-pip-version-check gdown
+          mkdir -p "$RUNNER_TEMP/project"
+          gdown --fuzzy "https://drive.google.com/file/d/1AcmaJCuoFyYeggztggUNyIsS1ya9UcVa/view?usp=drivesdk" -O "$RUNNER_TEMP/project.zip"
+          if ! unzip -tq "$RUNNER_TEMP/project.zip"; then
+            echo "The Google Drive file could not be downloaded as a valid ZIP."
+            echo "Make sure its sharing setting is 'Anyone with the link - Viewer'."
             exit 1
           fi
-          mkdir -p "$RUNNER_TEMP/project"
-          unzip -q "${archives[0]}" -d "$RUNNER_TEMP/project"
-          echo "Project extracted to $RUNNER_TEMP/project"
+          unzip -q "$RUNNER_TEMP/project.zip" -d "$RUNNER_TEMP/project"
 
       - name: Detect project type
         id: detect
@@ -36,17 +36,29 @@ jobs:
           set -euo pipefail
           ROOT="$RUNNER_TEMP/project"
           FLUTTER_FILE="$(find "$ROOT" -name pubspec.yaml -not -path '*/.dart_tool/*' -print -quit)"
-          GRADLE_FILE="$(find "$ROOT" \( -name settings.gradle -o -name settings.gradle.kts -o -name build.gradle -o -name build.gradle.kts \) -not -path '*/.gradle/*' -print -quit)"
           if [ -n "$FLUTTER_FILE" ]; then
+            PROJECT_DIR="$(dirname "$FLUTTER_FILE")"
             echo "type=flutter" >> "$GITHUB_OUTPUT"
-            echo "dir=$(dirname "$FLUTTER_FILE")" >> "$GITHUB_OUTPUT"
-          elif [ -n "$GRADLE_FILE" ]; then
-            echo "type=gradle" >> "$GITHUB_OUTPUT"
-            echo "dir=$(dirname "$GRADLE_FILE")" >> "$GITHUB_OUTPUT"
-          else
-            echo "Unsupported archive: no pubspec.yaml or Gradle build file was found."
-            exit 1
+            echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          SETTINGS_FILE="$(find "$ROOT" \( -name settings.gradle -o -name settings.gradle.kts \) -not -path '*/.gradle/*' -print -quit)"
+          if [ -n "$SETTINGS_FILE" ]; then
+            PROJECT_DIR="$(dirname "$SETTINGS_FILE")"
+          else
+            BUILD_FILE="$(find "$ROOT" \( -name build.gradle -o -name build.gradle.kts \) -not -path '*/.gradle/*' -print -quit)"
+            if [ -z "$BUILD_FILE" ]; then
+              echo "Unsupported ZIP: no Flutter pubspec.yaml or Android Gradle build files found."
+              exit 1
+            fi
+            PROJECT_DIR="$(dirname "$BUILD_FILE")"
+            if [ "$(basename "$PROJECT_DIR")" = "app" ]; then
+              PROJECT_DIR="$(dirname "$PROJECT_DIR")"
+            fi
+          fi
+          echo "type=gradle" >> "$GITHUB_OUTPUT"
+          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -78,14 +90,12 @@ jobs:
             chmod +x ./gradlew
             ./gradlew --no-daemon assembleDebug
           else
-            echo "This project has no Gradle wrapper. Installing Gradle and building."
-            sudo apt-get update
-            sudo apt-get install -y gradle
-            gradle --no-daemon assembleDebug
+            echo "No Gradle wrapper found; cannot safely infer the required Gradle version."
+            echo "Add the project's gradlew wrapper files and try again."
+            exit 1
           fi
 
       - name: Collect APK files
-        id: apk
         shell: bash
         run: |
           set -euo pipefail
@@ -96,7 +106,7 @@ jobs:
             find "${{ steps.detect.outputs.dir }}" -type f -path '*/build/outputs/apk/*/*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
           fi
           if ! find "$RUNNER_TEMP/apk-output" -type f -name '*.apk' | grep -q .; then
-            echo "Build finished but no APK was produced."
+            echo "Build completed but no APK was produced."
             exit 1
           fi
 
