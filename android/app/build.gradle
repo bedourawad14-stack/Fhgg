@@ -11,3 +11,5 @@ android {
         versionName '1.0'
     }
 }
+
+// Android CI build configuration.
