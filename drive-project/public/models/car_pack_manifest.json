@@ -1,0 +1,287 @@
+{
+ "file": "models/generic_passenger_car_pack.glb",
+ "units": "metres (Y up, already converted from the file)",
+ "sourceNodes": "glTF node indices (GLTFLoader: gltf.parser.associations gives the Object3D for each node index)",
+ "cars": [
+  {
+   "id": "compact",
+   "name": "Compact",
+   "bodyNode": 11,
+   "bodyNodeName": "Compact Body",
+   "wheelNodes": [
+    3,
+    5,
+    7,
+    9
+   ],
+   "centerXZ": [
+    -4.092,
+    5.649
+   ],
+   "groundY": 0.11,
+   "forwardXZ": [
+    0.649,
+    -0.76
+   ],
+   "length": 3.25,
+   "width": 1.61,
+   "height": 1.2,
+   "wheelbase": 2.08,
+   "track": 1.31,
+   "wheelRadius": 0.243,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "coupe",
+   "name": "Coupe",
+   "bodyNode": 15,
+   "bodyNodeName": "Coupe Body",
+   "wheelNodes": [
+    19,
+    21,
+    23,
+    25
+   ],
+   "centerXZ": [
+    -5.863,
+    1.899
+   ],
+   "groundY": 0.114,
+   "forwardXZ": [
+    0.943,
+    -0.334
+   ],
+   "length": 4.24,
+   "width": 1.89,
+   "height": 1.16,
+   "wheelbase": 2.41,
+   "track": 1.44,
+   "wheelRadius": 0.3,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "hatchback",
+   "name": "Hatchback",
+   "bodyNode": 27,
+   "bodyNodeName": "Hatchback Body",
+   "wheelNodes": [
+    31,
+    33,
+    35,
+    37
+   ],
+   "centerXZ": [
+    -3.983,
+    -5.613
+   ],
+   "groundY": 0.138,
+   "forwardXZ": [
+    0.574,
+    0.819
+   ],
+   "length": 3.96,
+   "width": 1.74,
+   "height": 1.22,
+   "wheelbase": 2.4,
+   "track": 1.45,
+   "wheelRadius": 0.3,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "minivan",
+   "name": "minivan",
+   "bodyNode": 41,
+   "bodyNodeName": "minivan body",
+   "wheelNodes": [
+    39,
+    45,
+    47,
+    49
+   ],
+   "centerXZ": [
+    -6.113,
+    -1.985
+   ],
+   "groundY": 0.161,
+   "forwardXZ": [
+    0.959,
+    0.284
+   ],
+   "length": 4.61,
+   "width": 1.87,
+   "height": 1.6,
+   "wheelbase": 2.84,
+   "track": 1.59,
+   "wheelRadius": 0.318,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "offroad",
+   "name": "Offroad",
+   "bodyNode": 53,
+   "bodyNodeName": "Offroad Body",
+   "wheelNodes": [
+    51,
+    57,
+    59,
+    61
+   ],
+   "centerXZ": [
+    6.155,
+    1.986
+   ],
+   "groundY": 0.192,
+   "forwardXZ": [
+    -0.951,
+    -0.309
+   ],
+   "length": 3.94,
+   "width": 1.96,
+   "height": 1.38,
+   "wheelbase": 2.32,
+   "track": 1.53,
+   "wheelRadius": 0.358,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "pickup",
+   "name": "Pickup",
+   "bodyNode": 65,
+   "bodyNodeName": "Pickup Body",
+   "wheelNodes": [
+    63,
+    69,
+    71,
+    73
+   ],
+   "centerXZ": [
+    0.006,
+    -6.102
+   ],
+   "groundY": 0.185,
+   "forwardXZ": [
+    -0.0,
+    1.0
+   ],
+   "length": 5.18,
+   "width": 2.07,
+   "height": 1.51,
+   "wheelbase": 3.19,
+   "track": 1.56,
+   "wheelRadius": 0.376,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "sedan",
+   "name": "Sedan",
+   "bodyNode": 75,
+   "bodyNodeName": "Sedan Body",
+   "wheelNodes": [
+    79,
+    81,
+    83,
+    85
+   ],
+   "centerXZ": [
+    -0.002,
+    6.572
+   ],
+   "groundY": 0.147,
+   "forwardXZ": [
+    0.0,
+    -1.0
+   ],
+   "length": 4.36,
+   "width": 1.94,
+   "height": 1.2,
+   "wheelbase": 2.62,
+   "track": 1.47,
+   "wheelRadius": 0.305,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "sport",
+   "name": "Sport",
+   "bodyNode": 95,
+   "bodyNodeName": "Sport body",
+   "wheelNodes": [
+    87,
+    89,
+    91,
+    93
+   ],
+   "centerXZ": [
+    4.116,
+    -5.655
+   ],
+   "groundY": 0.074,
+   "forwardXZ": [
+    -0.574,
+    0.819
+   ],
+   "length": 3.91,
+   "width": 1.77,
+   "height": 0.96,
+   "wheelbase": 2.45,
+   "track": 1.5,
+   "wheelRadius": 0.318,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "suv",
+   "name": "SUV",
+   "bodyNode": 102,
+   "bodyNodeName": "SUV Body",
+   "wheelNodes": [
+    99,
+    106,
+    109,
+    112
+   ],
+   "centerXZ": [
+    6.055,
+    -1.995
+   ],
+   "groundY": 0.197,
+   "forwardXZ": [
+    -0.951,
+    0.309
+   ],
+   "length": 4.61,
+   "width": 2.07,
+   "height": 1.53,
+   "wheelbase": 2.73,
+   "track": 1.56,
+   "wheelRadius": 0.376,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  },
+  {
+   "id": "wagon",
+   "name": "Wagon",
+   "bodyNode": 115,
+   "bodyNodeName": "Wagon Body",
+   "wheelNodes": [
+    119,
+    121,
+    123,
+    125
+   ],
+   "centerXZ": [
+    3.719,
+    5.044
+   ],
+   "groundY": 0.147,
+   "forwardXZ": [
+    -0.636,
+    -0.772
+   ],
+   "length": 4.38,
+   "width": 1.95,
+   "height": 1.24,
+   "wheelbase": 2.63,
+   "track": 1.66,
+   "wheelRadius": 0.304,
+   "frontCheck": "taillight texels confirm forward for all 10 cars"
+  }
+ ]
+}
