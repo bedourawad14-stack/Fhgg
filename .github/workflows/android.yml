@@ -32,17 +32,20 @@ jobs:
 
       - name: Download and extract Google Drive archive
         run: |
+          set -euo pipefail
           python -m pip install --upgrade gdown
           mkdir -p incoming drive-project
-          gdown --id "13A-gOYikLEWlBraBgG_1DO_k8HASkXhO" -O incoming/project.zip
+          gdown "https://drive.google.com/uc?id=13A-gOYikLEWlBraBgG_1DO_k8HASkXhO" -O incoming/project.zip --retries 3 --timeout 60
           test -s incoming/project.zip
+          unzip -tq incoming/project.zip
           unzip -q -o incoming/project.zip -d drive-project
           test "$(find drive-project -mindepth 1 | wc -l)" -gt 0
           echo "Extracted files:"
-          find drive-project -maxdepth 3 -type f | head -200
+          find drive-project -maxdepth 4 -type f | head -200
 
       - name: Commit extracted files to GitHub
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A drive-project
