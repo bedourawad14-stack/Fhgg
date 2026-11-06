@@ -3,11 +3,6 @@ name: Build Shawari Saudi Android APK
 on:
   push:
     branches: [main]
-    paths:
-      - "android/**"
-      - "drive-project/public/**"
-      - "drive-project/FILES_MANIFEST.txt"
-      - ".github/workflows/build-apk.yml"
   workflow_dispatch:
 
 permissions:
