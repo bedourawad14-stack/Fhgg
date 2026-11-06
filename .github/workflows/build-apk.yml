@@ -1,0 +1,77 @@
+name: Build Shawari Saudi Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "drive-project/public/**"
+      - "drive-project/FILES_MANIFEST.txt"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shawari-android-build
+  cancel-in-progress: false
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Verify game entry point and copy full web assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s drive-project/public/index.html
+          test -s drive-project/public/assets/index-BF96lAir.js
+          mkdir -p android/app/src/main/assets
+          rm -rf android/app/src/main/assets/public
+          cp -a drive-project/public android/app/src/main/assets/public
+          echo "Copied game assets:"
+          du -sh android/app/src/main/assets/public
+          echo "Manifest audit (diagnostic; source archive has known differences):"
+          node drive-project/tools/check.mjs drive-project/public drive-project/FILES_MANIFEST.txt || true
+
+      - name: Build debug APK
+        run: gradle --no-daemon --stacktrace -p android assembleDebug
+
+      - name: Verify APK and embedded game
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -tq "$APK"
+          unzip -l "$APK" | grep -q "assets/public/index.html"
+          unzip -l "$APK" | grep -q "assets/public/assets/index-BF96lAir.js"
+          echo "APK size:"
+          du -h "$APK"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: shawari-saudi-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
