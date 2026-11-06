@@ -35,7 +35,8 @@ jobs:
         run: |
           set -euo pipefail
           ROOT="$RUNNER_TEMP/project"
-          FLUTTER_FILE="$(find "$ROOT" -name pubspec.yaml -not -path '*/.dart_tool/*' -print -quit)"
+
+          FLUTTER_FILE="$(find "$ROOT" -name pubspec.yaml -not -path '*/.dart_tool/*' -not -path '*/node_modules/*' -print -quit)"
           if [ -n "$FLUTTER_FILE" ]; then
             PROJECT_DIR="$(dirname "$FLUTTER_FILE")"
             echo "type=flutter" >> "$GITHUB_OUTPUT"
@@ -43,28 +44,52 @@ jobs:
             exit 0
           fi
 
-          SETTINGS_FILE="$(find "$ROOT" \( -name settings.gradle -o -name settings.gradle.kts \) -not -path '*/.gradle/*' -print -quit)"
+          SETTINGS_FILE="$(find "$ROOT" \( -name settings.gradle -o -name settings.gradle.kts \) -not -path '*/.gradle/*' -not -path '*/node_modules/*' -print -quit)"
           if [ -n "$SETTINGS_FILE" ]; then
             PROJECT_DIR="$(dirname "$SETTINGS_FILE")"
-          else
-            BUILD_FILE="$(find "$ROOT" \( -name build.gradle -o -name build.gradle.kts \) -not -path '*/.gradle/*' -print -quit)"
-            if [ -z "$BUILD_FILE" ]; then
-              echo "Unsupported ZIP: no Flutter pubspec.yaml or Android Gradle build files found."
-              exit 1
-            fi
+            echo "type=gradle" >> "$GITHUB_OUTPUT"
+            echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BUILD_FILE="$(find "$ROOT" \( -name build.gradle -o -name build.gradle.kts \) -not -path '*/.gradle/*' -not -path '*/node_modules/*' -print -quit)"
+          if [ -n "$BUILD_FILE" ]; then
             PROJECT_DIR="$(dirname "$BUILD_FILE")"
             if [ "$(basename "$PROJECT_DIR")" = "app" ]; then
               PROJECT_DIR="$(dirname "$PROJECT_DIR")"
             fi
+            echo "type=gradle" >> "$GITHUB_OUTPUT"
+            echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          echo "type=gradle" >> "$GITHUB_OUTPUT"
-          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+
+          WEB_INDEX="$(find "$ROOT" -name index.html -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit)"
+          if [ -n "$WEB_INDEX" ]; then
+            PROJECT_DIR="$(dirname "$WEB_INDEX")"
+            echo "type=web" >> "$GITHUB_OUTPUT"
+            echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+            echo "Detected browser/web project at: $PROJECT_DIR"
+            exit 0
+          fi
+
+          echo "Unsupported ZIP. No Flutter, Android Gradle, or web index.html project was found."
+          echo "Top-level files for diagnosis:"
+          find "$ROOT" -maxdepth 3 -type f | head -80
+          exit 1
 
       - name: Set up Java
+        if: steps.detect.outputs.type != 'web'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Set up Node
+        if: steps.detect.outputs.type == 'web'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: ''
 
       - name: Set up Flutter
         if: steps.detect.outputs.type == 'flutter'
@@ -95,15 +120,79 @@ jobs:
             exit 1
           fi
 
+      - name: Package browser project as Android app
+        if: steps.detect.outputs.type == 'web'
+        shell: bash
+        env:
+          WEB_PROJECT_DIR: ${{ steps.detect.outputs.dir }}
+        run: |
+          set -euo pipefail
+          cd "$WEB_PROJECT_DIR"
+
+          if [ -f package.json ]; then
+            if [ -f package-lock.json ]; then
+              npm ci
+            elif [ -f npm-shrinkwrap.json ]; then
+              npm install
+            else
+              npm install
+            fi
+
+            if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
+              npm run build
+            fi
+          fi
+
+          WEB_OUTPUT=""
+          for candidate in dist build www out; do
+            if [ -f "$WEB_PROJECT_DIR/$candidate/index.html" ]; then
+              WEB_OUTPUT="$WEB_PROJECT_DIR/$candidate"
+              break
+            fi
+          done
+          if [ -z "$WEB_OUTPUT" ] && [ -f "$WEB_PROJECT_DIR/index.html" ]; then
+            WEB_OUTPUT="$WEB_PROJECT_DIR"
+          fi
+          if [ -z "$WEB_OUTPUT" ]; then
+            echo "Web build did not produce index.html in the project root or dist/build/www/out."
+            echo "Check the build script and its output directory."
+            exit 1
+          fi
+
+          APP_DIR="$RUNNER_TEMP/capacitor-wrapper"
+          mkdir -p "$APP_DIR/www"
+          cp -a "$WEB_OUTPUT"/. "$APP_DIR/www/"
+          cd "$APP_DIR"
+          npm init -y
+          npm install --save-exact @capacitor/core@6.2.1 @capacitor/android@6.2.1
+          npm install --save-dev --save-exact @capacitor/cli@6.2.1
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.fhgg.browserapp",
+            "appName": "Browser App",
+            "webDir": "www"
+          }
+          EOF
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+
       - name: Collect APK files
         shell: bash
+        env:
+          PROJECT_TYPE: ${{ steps.detect.outputs.type }}
+          PROJECT_DIR: ${{ steps.detect.outputs.dir }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/apk-output"
-          if [ "${{ steps.detect.outputs.type }}" = "flutter" ]; then
-            find "${{ steps.detect.outputs.dir }}/build/app/outputs/flutter-apk" -type f -name '*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
+          if [ "$PROJECT_TYPE" = "flutter" ]; then
+            find "$PROJECT_DIR/build/app/outputs/flutter-apk" -type f -name '*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
+          elif [ "$PROJECT_TYPE" = "web" ]; then
+            find "$RUNNER_TEMP/capacitor-wrapper/android" -type f -path '*/build/outputs/apk/*/*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
           else
-            find "${{ steps.detect.outputs.dir }}" -type f -path '*/build/outputs/apk/*/*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
+            find "$PROJECT_DIR" -type f -path '*/build/outputs/apk/*/*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
           fi
           if ! find "$RUNNER_TEMP/apk-output" -type f -name '*.apk' | grep -q .; then
             echo "Build completed but no APK was produced."
