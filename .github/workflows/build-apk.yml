@@ -1,4 +1,4 @@
-name: Build Shawari Saudi Android APK
+name: Build APK from uploaded ZIP
 
 on:
   push:
@@ -8,71 +8,102 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: shawari-android-build
-  cancel-in-progress: false
-
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Find and extract uploaded ZIP
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find . -maxdepth 2 -type f -iname '*.zip' -not -path './.git/*')
+          if [ "${#archives[@]}" -ne 1 ]; then
+            echo "Expected exactly one project ZIP in the repository root (or one folder below); found ${#archives[@]}."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/project"
+          unzip -q "${archives[0]}" -d "$RUNNER_TEMP/project"
+          echo "Project extracted to $RUNNER_TEMP/project"
+
+      - name: Detect project type
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/project"
+          FLUTTER_FILE="$(find "$ROOT" -name pubspec.yaml -not -path '*/.dart_tool/*' -print -quit)"
+          GRADLE_FILE="$(find "$ROOT" \( -name settings.gradle -o -name settings.gradle.kts -o -name build.gradle -o -name build.gradle.kts \) -not -path '*/.gradle/*' -print -quit)"
+          if [ -n "$FLUTTER_FILE" ]; then
+            echo "type=flutter" >> "$GITHUB_OUTPUT"
+            echo "dir=$(dirname "$FLUTTER_FILE")" >> "$GITHUB_OUTPUT"
+          elif [ -n "$GRADLE_FILE" ]; then
+            echo "type=gradle" >> "$GITHUB_OUTPUT"
+            echo "dir=$(dirname "$GRADLE_FILE")" >> "$GITHUB_OUTPUT"
+          else
+            echo "Unsupported archive: no pubspec.yaml or Gradle build file was found."
+            exit 1
+          fi
+
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '17'
 
-      - name: Install required Android SDK packages
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-        run: |
-          set -euo pipefail
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-
-      - name: Set up Gradle 8.13
-        uses: gradle/actions/setup-gradle@v4
+      - name: Set up Flutter
+        if: steps.detect.outputs.type == 'flutter'
+        uses: subosito/flutter-action@v2
         with:
-          gradle-version: "8.13"
+          channel: stable
+          cache: true
 
-      - name: Verify game entry point and copy full web assets
+      - name: Build Flutter APK
+        if: steps.detect.outputs.type == 'flutter'
+        working-directory: ${{ steps.detect.outputs.dir }}
+        run: |
+          flutter pub get
+          flutter build apk --release
+
+      - name: Build Android Gradle APK
+        if: steps.detect.outputs.type == 'gradle'
+        working-directory: ${{ steps.detect.outputs.dir }}
         shell: bash
         run: |
           set -euo pipefail
-          test -s drive-project/public/index.html
-          test -s drive-project/public/assets/index-BF96lAir.js
-          mkdir -p android/app/src/main/assets
-          rm -rf android/app/src/main/assets/public
-          cp -a drive-project/public android/app/src/main/assets/public
-          echo "Copied game assets:"
-          du -sh android/app/src/main/assets/public
-          echo "Manifest audit (diagnostic; source archive has known differences):"
-          node drive-project/tools/check.mjs drive-project/public drive-project/FILES_MANIFEST.txt || true
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew --no-daemon assembleDebug
+          else
+            echo "This project has no Gradle wrapper. Installing Gradle and building."
+            sudo apt-get update
+            sudo apt-get install -y gradle
+            gradle --no-daemon assembleDebug
+          fi
 
-      - name: Build debug APK
-        run: gradle --no-daemon --stacktrace -p android assembleDebug
-
-      - name: Verify APK and embedded game
+      - name: Collect APK files
+        id: apk
         shell: bash
         run: |
           set -euo pipefail
-          APK="android/app/build/outputs/apk/debug/app-debug.apk"
-          test -s "$APK"
-          unzip -tq "$APK"
-          unzip -l "$APK" | grep -q "assets/public/index.html"
-          unzip -l "$APK" | grep -q "assets/public/assets/index-BF96lAir.js"
-          echo "APK size:"
-          du -h "$APK"
+          mkdir -p "$RUNNER_TEMP/apk-output"
+          if [ "${{ steps.detect.outputs.type }}" = "flutter" ]; then
+            find "${{ steps.detect.outputs.dir }}/build/app/outputs/flutter-apk" -type f -name '*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
+          else
+            find "${{ steps.detect.outputs.dir }}" -type f -path '*/build/outputs/apk/*/*.apk' -exec cp {} "$RUNNER_TEMP/apk-output/" \;
+          fi
+          if ! find "$RUNNER_TEMP/apk-output" -type f -name '*.apk' | grep -q .; then
+            echo "Build finished but no APK was produced."
+            exit 1
+          fi
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shawari-saudi-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: android-apk
+          path: ${{ runner.temp }}/apk-output/*.apk
           if-no-files-found: error
           retention-days: 14
